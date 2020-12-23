@@ -1,0 +1,159 @@
+---
+title: "Analysing the Salary Difference Between Genders"
+author: "Shuk Yin Chung (1003384964)"
+date: "December 10, 2020"
+output:
+  pdf_document: default
+---
+Github repo link: https://github.com/Shuk-Yin-Chung/STA304-Final-Project.git
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(readr)
+library(tinytex)
+```
+
+## Abstrat
+  This report aims to investigate the salary difference and gender inequality between males and females in Canada, according to ages, education level, and weekly working hours. By using a multiple linear regression model, it shows that males' salaries are generally higher than females' salaries.
+
+  Keywords: Salary Difference, Gender Inequality, Ages, Education Level, Weekly Working Hours, Linear Regression Model
+  
+## Introduction
+  Nowadays, gender discrimination is a global issue. It is often said that male earns higher salary than female, although they may have the same working hours and other characteristics etc. Then, it raises the public concern of salary inequality between males and females as it violates human rights and leads to other social problems (such as higher crime rates or poor health in females). 
+  
+  It is important to make an inference between salary and gender. In this report, it aims to investigate the salary gap between Canadian males and females based on their weekly working hours, ages, and education level. Salary is the response variable, whereas sex, age, education level, and weekly working hours are the predict variables.
+  
+  The data is derived from 2017 Canadian Income Survey for analyzing if there is salary inequality between genders in Canada. The size of data set is 49295 after the cleaning-up. In the methodology section, a multilevel linear regression model is used to simulate the data and analyze the salary difference. Then, in the result section, it will include plots and quantitative analysis and indicate the result of the model. Finally, in the discussion section, it concludes the report and discusses the weakness and future steps of this project.
+
+## Methodology
+### Data
+  The size of the original data is 49295. For the sake of concise modeling, this report would randomly select 1000 samples from the data to perform the model. Here is the table providing baseline characteristics of the data:
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+mydataset <- read.csv("cis_data.csv")
+# Set seed to my student number
+set.seed(1003384964)
+# Randoml select 1000 samples
+sample <- mydataset[sample(1:nrow(mydataset), 1000),]
+attach(sample)
+glimpse(sample)
+```
+
+  The tables shows the variables and the types of variables. CASEID and salary are <int> which stands for integer. Working hours is <dbl> which means double Both integer and double are numeric values. Sex and education are <chr> that stands for character. They are strings of letters. Age is splitted into groups, so it is a character and a string of numbers.
+
+### Model
+  This report uses a multiple linear regression model because it models the correlation between salary and certain predictors. Salary is the response variable because the goal of this report is to find out the salary difference. Sex, age, education level, and weekly working hours are the predict variables that affects the amount of salary. The equation of the full model is:
+```{r include=FALSE}
+# Set up the model
+model <- lm(salary~sex+age+education+weekly_working_hours)
+```
+$$ Salary = \beta_0+\beta_1 x_{sex}+\beta_2 x_{age}+\beta_3 x_{education}+\beta_4 x_{weekly_wokring_hours}+e $$
+
+where $\beta_0$ is the intercept of the model, $\beta_1$,...,$\beta_4$ are the estimated regression coefficients of particular predictors, and $e$ is the error terms.
+
+  However, sex, age, and education level are categorical variables in the survey. So, this report uses dummy variable coding that alters the responses to binary. A new variable $x_{male}$ replaces $x_{sex}$. Variables of $x_{age_{20-29}}$,$x_{age_{30-39}}$, $x_{age_{40-49}}$, $x_{age_{50-59}}$, $x_{age_{60-69}}$, and $x_{age_{70+}}$ represent different age groups. Also, variables $x_{education_{Less than high school graduation}}$,$x_{education_{Non-university postsecondary certificate or diploma}}$, and $x_{education_{University degree or certificate}}$ represent education levels. Then, the full model can be expanded into:
+$$ Salary = \beta_0+\beta_1 x_{male}+\beta_2 x_{age_{20-29}}+\beta_3 x_{age_{30-39}}+ \beta_4 x_{age_{40-49}}+\beta_5 x_{age_{50-59}}+ \beta_6 x_{age_{60-69}}+ \beta_7 x_{age_{70+}}$$
+$$+ \beta_8 x_{education_{Less than high school graduation}}+\beta_9 x_{education_{Non-university postsecondary certificate or diploma}}$$
+$$+\beta_{10} x_{education_{University degree or certificate}}+\beta_{11} x_{weekly wokring hours}+e $$
+
+If the respondent is male, $x_{male}$ equals to 1. Otherwise, x_{male} equals 0. This logic can also be applied to the age groups and education levels.
+
+  To predict the salary difference, it is useful to create subsets for males and females.
+  Then, the model for males is:
+$$ Salary_M = \beta_0+\beta_1+\beta_2 x_{age_{20-29}}+ \beta_3 x_{age_{30-39}}+ \beta_4 x_{age_{40-49}}+\beta_5 x_{age_{50-59}}+ \beta_6 x_{age_{60-69}}+ \beta_7 x_{age_{70+}}$$
+$$+\beta_8 x_{education_{Less than high school graduation}}+\beta_9 x_{education_{Non-university postsecondary certificate or diploma}}$$
+$$+\beta_10 x_{education_{University degree or certificate}}+\beta_11 x_{weekly_wokring_hours}+e $$
+```{r include=FALSE}
+# Create subsets for males
+subset_M <- sample %>% filter(sex == "Male")
+# Create model for males
+model_M <- lm(salary~age+education+weekly_working_hours, data = subset_M)
+```
+  The model for females is:
+$$ Salary_F = \beta_0+\beta_2 x_{age_{20-29}}+ \beta_3 x_{age_{30-39}}+ \beta_4 x_{age_{40-49}}+\beta_5 x_{age_{50-59}}+ \beta_6 x_{age_{60-69}}+ \beta_7 x_{age_{70+}}$$
+$$+\beta_8 x_{education_{Less than high school graduation}}+\beta_9 x_{education_{Non-university postsecondary certificate or diploma}}$$
+$$+\beta_10 x_{education_{University degree or certificate}}+\beta_11 x_{weekly_wokring_hours}+e $$
+```{r include=FALSE}
+# Create subsets for females
+subset_F <- sample %>% filter(sex == "Female")
+# Create model for males
+model_F <- lm(salary~age+education+weekly_working_hours, data = subset_F)
+```
+
+## Results
+Summary of males' weekly working hours and salaries:
+```{r echo=FALSE}
+summary(subset_M[c(5,6)])
+```
+
+  The weekly working hours of males vary between 4 to 105 hours. In average, males work 39.8 hours per week. The maximum salary for males is $750000 per week, and the average salary is $55728 per week.
+
+Summary of females' weekly working hours and salaries:
+```{r echo=FALSE}
+summary(subset_F[c(5,6)])
+```
+  Females' weekly working hours vary between 2 to 102 hours, and the average is 34.16 working hours. Although females' average working hours per week is slight lower than males', but females' salaries are remarkable lower than males' salaries. It is because the average salary for female is $36075 and the maximum salary is $270000 only.
+  
+  Use a scatter plot to support this assumption and illustrate the correlation between salary and weekly working hours:
+```{r echo=FALSE}
+# Produce scatter plot of salary vs weekly working hours between genders
+plot(weekly_working_hours, salary, main = "Salary by Weekly Working Hours Scatterplot", xlab = "Weekly Working Hours", ylab = "Salary")
+points(subset_M$weekly_working_hours, subset_M$salary, col="blue")
+abline(lm(subset_M$salary ~ subset_M$weekly_working_hours), col = "blue")
+points(subset_F$weekly_working_hours, subset_F$salary, col="red")
+abline(lm(subset_F$salary ~ subset_F$weekly_working_hours), col = "red")
+legend("right",legend = c("Males", "Females"), col = c("blue", "red"), pch=c(1,1))
+```
+
+  The scatter plot shows a positive correlation between salary and weekly working hours. The blue line represents the data of males while the red line represents the data of females. Both lines show positive correlations, but the blue line is above the red line. It implies that males' salaries are higher than females' salaries even they work the same amount of time.
+  
+  Next, I will analyze the models for full model, males and females based on all predictors.
+  
+  A list of p-values for full model:
+```{r echo=FALSE}
+p_values <- data.frame(summary(model)$coefficients[,4])
+p_values
+```
+  The p-valus of full model shows that males, having university degree or certificate, and weekly working hours are the most useful predictors that affects the amount of salaries. In other words, people may have higher chances to get high salaries if they have these characteristics. It is because their p-values are the lowest three in the full model. It means they are very significant in statistics.
+  
+  Summary of males' model:
+```{r echo=FALSE}
+summary(model_M)
+```
+  The model reveals that most of the predictors have high p-values (p > 0.05), which means they are not statistically significant. The useful predictors to explain males' salaries are ages of 40-49, ages of 50-59, education level with university degree or certificate, and weekly working hours because they have low p-values (p <= 0.05) and they are significant in statistics.
+  
+  Summary of females' model:
+```{r echo=FALSE}
+summary(model_F)
+```
+  The model shows that the predictors: ages between 50-59, education level with university degree or certificate, and weekly working hours are useful to explain females' salaries. It is because they have low p-values (p <= 0.05) that means they are statistically significant. The rest predictors are not significant for analyzing females' salaries as their p-values are higher than 0.05.
+  
+  Then, substitute the coefficients into the Salary_M and Salary_F:
+$$ Salary_M = -6222.6332+5116.9 x_{age_{20-29}}+ 22413.4 x_{age_{30-39}}+ 28236.8 x_{age_{40-49}}+35423.2 x_{age_{50-59}}+ 8231.7 x_{age_{60-69}} -1848.4 x_{age_{70+}}$$
+$$-7311 x_{education_{Less than high school graduation}}+12617.4 x_{education_{Non-university postsecondary certificate or diploma}}$$
+$$+35433.3 x_{education_{University degree or certificate}}+707.7 x_{weekly_wokring_hours} $$
+
+$$ Salary_F = -7365.9-1640 x_{age_{20-29}}+ 11264.6 x_{age_{30-39}}+ 13140.7 x_{age_{40-49}}+14850.1 x_{age_{50-59}}+ 129.6 x_{age_{60-69}}+18155 x_{age_{70+}}$$
+$$-1309.2 x_{education_{Less than high school graduation}}+6009.1 x_{education_{Non-university postsecondary certificate or diploma}}$$
+$$+23352.6 x_{education_{University degree or certificate}}+749.5 x_{weekly_wokring_hours} $$
+
+  By comparing Salary_M and Salary_F, most coefficients of Salary_M are larger than coefficients of Salary_F except for the coefficients of $x_{age_{70+}}$, $x_{education_{Less than high school graduation}}$, and $x_{weekly_wokring_hours}$. However, the p-values of $x_{age_{70+}}$ and $x_{education_{Less than high school graduation}}$ are higher than 0.05, which means they are statistically insignificant to explain the salary. For $x_{weekly_wokring_hours}$, the coefficients' difference between males' and females' model is not large enough to affect the salary. Therefore, males earn higher salaries than females based on the coefficients of models.
+
+## Discussion
+### Summary
+  In this report, I used a multiple linear regression model to predict the salary difference between Canadian males and Canadian females based on ages, education level, and weekly working hours. This report also uses scatter plot, summary, coefficients of models, and p-values to analyze the model and discuss the result.
+  
+### Conclusion
+  The result shows that Canadian males' salaries are higher than Canadian females' even males and females have the same characteristics. According to the full model, males who have university degree or certificate and have longer working hours may probably get higher salaries.
+  
+  It raises the concern of gender inequality because females are disadvantaged while comparing to males. This report shows that the labor market in Canada suppresses females' salaries. It is because females have less accesses to education and economic opportunities. It may also lead to other social problem like poor health in females.
+
+### Weakness & Next Steps:
+  As shown in the scatter plot, the data involves outliers and leverage points that influence the result of the model. The next step could be removing the leverage points, so it would also reduce the residuals and error terms. Besides, the R-squared values of males' model and females' model are 0.1471 and 0.2434 respectively. The values are relatively low and imply some predictors are not useful to predict the salaries. The next step could be increasing the R-squared value because it would improve the accuracy of the model. To adjust R-squared value, it is possible to use AIC and BIC to add or remove predictors that would result in improving the model.
+  
+  The future steps of analyzing salary difference genders could be adding more potential predictors to the model. For example, salary for part-time jobs vs full-time job, employee benefits and all sources of personal incomes.
+
+## References
+1. "CHASS Microdata Analysis and Subsetting with SDA, Canadian Income Survey (CIS), 2017." Retrieved from https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/html/cis.htm
+
+2. "Canadian Income Survey, 2017: Public Use Microdata File Data dictionary" Statistics Canada. University of Toronto Data Library Service, 2001. Retrieved from https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/dli2/cis/2017/more_doc/2017CIS_Codebook.pdf
